@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>textBlackHole</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        canvas{
+            background: #fff;
+            display: block;
+            height: 100vh;
+            width: 100vw;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+</body>
+<script>
+const CONTENT=`从此之后，四婶也就不再提起祥林嫂。
+但有一年的秋季，大约是得到祥林嫂好运的消息之后的又过了两个新年，她竟又站在四叔家的堂前了。桌上放着一个荸荠式的圆篮，檐下一个小铺盖。她仍然头上扎着白头绳，乌裙，蓝夹祆，月白背心，脸色青黄，只是两颊上已经消失了血色，顺着眼，眼角上带些泪痕，眼光也没有先前那样精神了。而且仍然是卫老婆子领着，显出慈悲模样，絮絮的对四婶说：“……这实在是叫作‘天有不测风云’，她的男人是坚实人，谁知道年纪轻轻，就会断送在伤寒上？本来已经好了的，吃了一碗冷饭，复发了。幸亏有儿子；她又能做，打柴摘茶养蚕都来得，本来还可以守着，谁知道那孩子又会给狼衔去的呢？春天快完了，村上倒反来了狼，谁料到？现在她只剩了一个光身了。大伯来收屋，又赶她。她真是走投无路了，只好来求老主人。好在她现在已经再没有什么牵挂，太太家里又凑巧要换人，所以我就领她来。——我想，熟门熟路，比生手实在好得多……”
+“我真傻，真的，”祥林嫂抬起她没有神采的眼睛来，接着说。“我单知道下雪的时候野兽在山坳里没有食吃，会到村里来；我不知道春天也会有。我一清早起来就开了门，拿小篮盛了一篮豆，叫我们的阿毛坐在门槛上剥豆去。他是很听话的，我的话句句听；他出去了。我就在屋后劈柴，掏米，米下了锅，要蒸豆。我叫阿毛，没有应，出去口看，只见豆撒得一地，没有我们的阿毛了。他是不到别家去玩的；各处去一问，果然没有。我急了，央人出去寻。直到下半天，寻来寻去寻到山坳里，看见刺柴上桂着一只他的小鞋。大家都说，糟了，怕是遭了狼了。再进去；他果然躺在草窠里，肚里的五脏已经都给吃空了，手上还紧紧的捏着那只小篮呢。……”她接着但是呜咽，说不出成句的话来。四婶起刻还踌躇，待到听完她自己的话，眼圈就有些红了。她想了一想，便教拿圆篮和铺盖到下房去。卫老婆子仿佛卸了一肩重担似的嘘一口气；祥林嫂比初来时候神气舒畅些，不待指引，自己驯熟的安放了铺盖。她从此又在鲁镇做女工了。
+大家仍然叫她祥林嫂。`;
+const FONT_SIZE = 25;
+
+
+class Char{
+    constructor(originX, originY, char){
+        this.originX = originX;
+        this.originY = originY;
+        this.x = this.#random(0, 1000);
+        this.y = this.#random(500, 560);
+        this.m = this.#random(1, 7);
+        this.char = char;
+        this.size = FONT_SIZE;
+    }
+    #random(min, max){
+        return Math.random() * (max - min) + min;
+    }
+    moved(vx, vy){
+        this.x += vx*this.m;
+        this.y += vy*this.m; 
+    }
+    moveTo(x, y,curve="linear"){
+        const dx = x - this.x;
+        const dy = y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        let force = 1;
+        switch(curve){
+            case "easeIn":
+                force = distance/100;
+                break;
+            case "RevEaseIn":
+                force = -distance/100;
+                break;
+            case "easeOut":CONTENT
+                force = 100/distance;
+                if(force > 10) force = 10;
+                break;
+            case "easeInOut":
+                force = distance/100;
+                if(force > 1) force = distance/100;
+                if(force < -1) force = 100/distance;
+                break;
+            case "linear":
+                force = 1;
+                break;
+        }
+        const angle = Math.atan2(dy, dx);
+        const vx = Math.cos(angle) * force;
+        const vy = Math.sin(angle) * force;
+        this.moved(vx, vy);
+    }
+}
+class Canvas{
+    constructor(element){
+        if(!element||element.nodeName !== 'CANVAS'){
+            throw new Error(`canvas element is required, but received ${element ? element.nodeName : 'null'}`);
+        }
+        this.canvas = element;
+        this.ctx = this.canvas.getContext('2d');
+        this.cWidth = this.canvas.width = window.innerWidth;
+        this.cHeight = this.canvas.height = window.innerHeight;
+        this.#init();
+    }
+    #init() {
+        this.ctx.font=`${FONT_SIZE}px Arial`;
+        this.string = CONTENT;
+        this.charWidth = FONT_SIZE+1;
+        this.#initTextPos();
+        this.mouseX = -1000;
+        this.mouseY = -1000;
+        this.canvas.addEventListener('mousemove', (e) => {
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        });
+        this.canvas.addEventListener('mouseleave', (e) => {
+            this.mouseX = -1000;
+            this.mouseY = -1000; 
+        });
+        this.#loop();
+    }
+    #initTextPos(){
+        const config = {
+            marginLeft: 20,
+            marginTop: 20,
+            lineHeight: 40,
+        }
+        const maxCols = Math.floor((this.cWidth - config.marginLeft * 2) / this.charWidth);
+        let rowsCount = 0;
+        let colsCount = 0;
+        let length = 0;
+        this.charArr = [];
+
+        for(let i = 0; i < this.string.length; i++){
+            let char = this.string[i];
+            //换行
+            if(char === '\n'){
+                rowsCount++;
+                colsCount = 2;
+                continue;
+            }
+            if(colsCount >= maxCols){
+                rowsCount++;
+                colsCount = 0; 
+            }
+            const x = config.marginLeft + colsCount * this.charWidth;
+            const y = config.marginTop + rowsCount * config.lineHeight+FONT_SIZE;
+            this.charArr[length]=new Char(x, y, char);
+            colsCount++;
+            length++;
+        }
+    }
+    draw(){
+        //移动文字
+        for(const char of this.charArr){
+            let dx = this.mouseX - char.x;
+            let dy = this.mouseY - char.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            if(distance < 300){
+                char.moveTo(this.mouseX, this.mouseY,"easeOut");
+            }else{
+                char.moveTo(char.originX, char.originY,"easeIn");
+            }
+        }
+
+        //渲染文字
+        for(const char of this.charArr){
+            this.ctx.font=`${char.size}px Arial`;
+            this.ctx.fillText(char.char, char.x, char.y);
+        }
+
+        //渲染渐变圆
+        const gradient = this.ctx.createRadialGradient(this.mouseX, this.mouseY, 50, this.mouseX, this.mouseY, 250);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(this.mouseX, this.mouseY, 300, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black'; 
+    }
+    #loop(){
+        this.ctx.clearRect(0, 0, this.cWidth, this.cHeight);
+        this.draw();
+        requestAnimationFrame(this.#loop.bind(this));
+    }
+}
+const canvas = new Canvas(document.querySelector('canvas'));
+</script>
+</html>
