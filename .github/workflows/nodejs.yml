@@ -15,10 +15,15 @@ jobs:
       with:
         node-version: 22.x
     - run: node ./generateData.js
-    - name: Commit and Push Changes
+    - name: Check for Changes
+      id: check_changes
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git diff --quiet || echo "changes"
+    - name: Commit and Push Changes
+      if: steps.check_changes.outputs.result == 'changes'
+      run: |
         git add .
         git commit -m 'auto:generate data.js'
         git push
