@@ -22,6 +22,9 @@ class Generator {
         '.gitmodules',
         'data.js',
         'generateData.js',
+        'package.json',
+        'package-lock.json',
+        '.github',
         'index.html',
         'README.md',
     ];
