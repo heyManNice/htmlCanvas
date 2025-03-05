@@ -265,6 +265,11 @@ class Window extends Widget{
             desktop.children.unshift(this);
         }
     }
+    setSize(width,height){
+        super.setSize(width,height);
+        this.titleBar.setSize(width,this.titleBar.height);
+        return this;
+    }
 }
 
 class TitleBar extends Widget{
@@ -328,6 +333,7 @@ for(let i=0;i<5;i++){
     const y = 300 + i*50;
     const window = new Window(desktop);
     window.setPos(x,y)
+          .setSize(400,300)
           .setTitle(`Window ${i}`);
 }
 </script>
