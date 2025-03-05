@@ -48,7 +48,7 @@ class Widget{
         this.y=y;
         return this; 
     }
-    onDraw(params){
+    onDraw(){
         
     }
     _loop(){
@@ -58,30 +58,30 @@ class Widget{
             child._loop(); 
         }
     }
-    _draw(params){
-        const {mouse,graphics}=params;
-        this.onDraw(params);
+    _draw(){
+        const {mouse,graphics}=app;
+        this.onDraw(app);
         for(const child of this.children){
-            child._draw(params);
+            child._draw();
         }
     }
-    _mouseDown(params){
+    _mouseDown(){
         if(this.onMouseDown){
-            this.onMouseDown(params);
+            this.onMouseDown();
         }
         for(const child of this.children){
-            if(child.isInArea(params.mouse.absoluteX,params.mouse.absoluteY)){
-                child._mouseDown(params); 
+            if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                child._mouseDown(); 
             }
         }
     }
-    _mouseUp(params){
+    _mouseUp(){
         if(this.onMouseUp){
-            this.onMouseUp(params);
+            this.onMouseUp();
         }
         for(const child of this.children){
-            if(child.isInArea(params.mouse.absoluteX,params.mouse.absoluteY)){
-                child._mouseUp(params); 
+            if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                child._mouseUp(); 
             }
         }
     }
@@ -95,6 +95,66 @@ class Widget{
     }
 }
 
+class Application{
+    children=[];
+    mouse={
+        absoluteX:0,
+        absoluteY:0
+    }
+    constructor(element){
+        if(!element||element.nodeName !== 'CANVAS'){
+            throw new Error(`canvas element is required, but received ${element ? element.nodeName : 'null'}`);
+        }
+        if(!window.app){
+            // 定义app 并且不可重新赋值
+            const that=this;
+            Object.defineProperty(window, 'app', {
+            configurable: false,
+            enumerable: true,
+            get() {
+                return that;
+            },
+            set() {
+                throw new Error("window.app is already defined and cannot be reassigned.");
+            }
+        });
+        }else if(window.app instanceof Application === false){
+            throw new Error(`window.app (instance of ${window.app.constructor.name}) is already defined. The Application requires it to implement a singleton pattern. Please avoid using the 'app' variable under the window object.`); 
+        }else{
+            // 返回存在的单例
+            return window.app; 
+        }
+        this.canvas=element;
+        this.graphics=this.canvas.getContext('2d');
+        this.ratio = window.devicePixelRatio || 1;
+        this.monitor= {
+            width:window.innerWidth*this.ratio,
+            height:window.innerHeight*this.ratio
+        }
+        this.canvas.width=this.monitor.width;
+        this.canvas.height=this.monitor.height;
+        this.canvas.addEventListener('mousemove', (e) => {
+            this.mouse.absoluteX = e.clientX*this.ratio;
+            this.mouse.absoluteY = e.clientY*this.ratio;
+        });
+        this.canvas.addEventListener('mousedown', (e) => {
+            for(const child of this.children){
+                if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                    child._mouseDown();
+                } 
+            }
+        });
+        this.canvas.addEventListener('mouseup', (e) => {
+            for(const child of this.children){
+                if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                    child._mouseUp();
+                }
+            }
+        })
+    }
+}
+
+
 class Desktop extends Widget{
     absoluteX=0;
     absoluteY=0;
@@ -102,70 +162,23 @@ class Desktop extends Widget{
     y=0;
     canvas;
     graphics;
-    constructor(canvas){
+    constructor(app){
+        if(!app||app instanceof Application === false){
+            throw new Error(`Application is required, but received ${app? app.constructor.name : 'null'}`); 
+        }
         super(null);
-        this.canvas=canvas;
-        this.graphics=canvas.getContext('2d');
-        this.ratio = window.devicePixelRatio || 1;
-        this.width = this.canvas.width = window.innerWidth*this.ratio;
-        this.height = this.canvas.height = window.innerHeight*this.ratio;
-        this.canvas.addEventListener('mousemove', (e) => {
-            this.mouseX = e.clientX*this.ratio;
-            this.mouseY = e.clientY*this.ratio;
-        });
-        this.canvas.addEventListener('mousedown', (e) => {
-            const params = {
-                mouse:{
-                    absoluteX:this.mouseX,
-                    absoluteY:this.mouseY
-                },
-                graphics:this.graphics,
-                ratio:this.ratio 
-            }
-            if(this.onMouseDown){
-                this.onMouseDown(params); 
-            }
-            for(const child of this.children){
-                if(child.isInArea(params.mouse.absoluteX,params.mouse.absoluteY)){
-                    child._mouseDown(params);
-                } 
-            }
-        });
-        this.canvas.addEventListener('mouseup', (e) => {
-            const params = {
-                mouse:{
-                    absoluteX:this.mouseX,
-                    absoluteY:this.mouseY
-                },
-                graphics:this.graphics,
-                ratio:this.ratio 
-            }
-            if(this.onMouseUp){
-                this.onMouseUp(params); 
-            }
-            for(const child of this.children){
-                if(child.isInArea(params.mouse.absoluteX,params.mouse.absoluteY)){
-                    child._mouseUp(params);
-                }
-            }
-        })
+        this.width = app.monitor.width;
+        this.height = app.monitor.height;
+        app.children.push(this);
         this._loop();
     }
 
     _loop(){
-        this.graphics.clearRect(0, 0, this.width, this.height);
-        const params = {
-            mouse:{
-                absoluteX:this.mouseX,
-                absoluteY:this.mouseY
-            },
-            graphics:this.graphics,
-            ratio:this.ratio
-        };
+        app.graphics.clearRect(0, 0, this.width, this.height);
         for(const child of this.children){
             child._loop();
         }
-        this._draw(params);
+        this._draw();
         requestAnimationFrame(()=>{this._loop()});
     }
 }
@@ -181,8 +194,8 @@ class Window extends Widget{
         this.width=800;
         this.height=600;
     }
-    onDraw(params){
-        const {mouse,graphics}=params;
+    onDraw(){
+        const {mouse,graphics}=app;
         if(this.mouseStatus==="down"){
             this.x=mouse.absoluteX-this.mouseStatusChangeClientPos.x;
             this.y=mouse.absoluteY-this.mouseStatusChangeClientPos.y;
@@ -191,23 +204,24 @@ class Window extends Widget{
         graphics.fillStyle=this.backgroundColor;
         graphics.strokeRect(this.x,this.y,this.width,this.height);
     }
-    onMouseDown(params){
-        const {absoluteX,absoluteY} = params.mouse;
+    onMouseDown(){
+        const {absoluteX,absoluteY} = app.mouse;
         this.mouseStatusChangeClientPos = {x:absoluteX-this.x,y:absoluteY-this.y};
         this.mouseStatus = "down";
     }
-    onMouseUp(params){
-        const {absoluteX,absoluteY} = params.mouse;
+    onMouseUp(){
+        const {absoluteX,absoluteY} = app.mouse;
         this.mouseStatusChangeClientPos = {absoluteX,absoluteY};
         this.mouseStatus = "up";
     }
 }
 
-const desktop = new Desktop(document.querySelector('canvas'));
+const app = new Application(document.querySelector('canvas'));
+const desktop = new Desktop(app);
 const win = new Window(desktop);
 const w = new Widget(win);
-w.onDraw=function(params){
-    const {mouse,graphics}=params;
+w.onDraw=function(app){
+    const {mouse,graphics}=app;
     graphics.fillStyle="#f00";
     graphics.fillRect(this.absoluteX,this.absoluteY,this.width,this.height); 
 }
