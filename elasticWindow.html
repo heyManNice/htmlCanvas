@@ -34,14 +34,27 @@ class Widget{
     width = 10;
     height = 10;
 
-    backgroundColor="#000";
+    backgroundColor="#fff";
     name;
+    borderColor="#000";
+    borderWidth=1;
     
     constructor(parent){
         this.parent=parent;
         if(parent){
             parent.children.push(this); 
         }
+    }
+    _drawBorder(){
+        const graphics=app.graphics;
+        graphics.strokeStyle=this.borderColor;
+        graphics.lineWidth=this.borderWidth;
+        graphics.strokeRect(this.absoluteX,this.absoluteY,this.width,this.height);
+    }
+    _drawBackground(){
+        const graphics=app.graphics;
+        graphics.fillStyle=this.backgroundColor;
+        graphics.fillRect(this.absoluteX,this.absoluteY,this.width,this.height); 
     }
     setPos(x,y){
         this.x=x;
@@ -60,6 +73,12 @@ class Widget{
     }
     _draw(){
         const {mouse,graphics}=app;
+        if(this.borderWidth>0){
+            this._drawBorder(); 
+        }
+        if(this.backgroundColor){
+            this._drawBackground(); 
+        }
         this.onDraw(app);
         for(const child of this.children){
             child._draw();
@@ -189,20 +208,19 @@ class Window extends Widget{
     mouseStatusChangePos={x:0,y:0};
     constructor(parent){
         super(parent);
-        this.x=100;
-        this.y=100;
         this.width=800;
         this.height=600;
+        this.x=app.monitor.width/2-this.width/2;
+        this.y=app.monitor.height/2-this.height/2;
     }
-    onDraw(){
-        const {mouse,graphics}=app;
+    _loop(){
+        super._loop();
+        const mouse=app.mouse;
         if(this.mouseStatus==="down"){
             this.x=mouse.absoluteX-this.mouseStatusChangeClientPos.x;
             this.y=mouse.absoluteY-this.mouseStatusChangeClientPos.y;
         }
-        
-        graphics.fillStyle=this.backgroundColor;
-        graphics.strokeRect(this.x,this.y,this.width,this.height);
+
     }
     onMouseDown(){
         const {absoluteX,absoluteY} = app.mouse;
@@ -219,13 +237,10 @@ class Window extends Widget{
 const app = new Application(document.querySelector('canvas'));
 const desktop = new Desktop(app);
 const win = new Window(desktop);
-const w = new Widget(win);
-w.onDraw=function(app){
-    const {mouse,graphics}=app;
-    graphics.fillStyle="#f00";
-    graphics.fillRect(this.absoluteX,this.absoluteY,this.width,this.height); 
-}
-w.setPos(100,100);
-w.setSize(200,150);
+const widget = new Widget(win);
+widget.borderWidth=1;
+widget.backgroundColor="#f00";
+widget.setPos(0,0);
+widget.setSize(800,50);
 </script>
 </html>
