@@ -209,10 +209,9 @@ class Desktop extends Widget{
         if(!app||app instanceof Application === false){
             throw new Error(`Application is required, but received ${app? app.constructor.name : 'null'}`); 
         }
-        super(null);
+        super(app);
         this.width = app.monitor.width;
         this.height = app.monitor.height;
-        app.children.push(this);
         this._loop();
     }
 
