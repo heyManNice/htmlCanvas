@@ -213,7 +213,6 @@ class Desktop extends Widget{
         requestAnimationFrame(()=>{this._loop()});
     }
     _draw(){
-        const {mouse,graphics}=app;
         if(this.borderWidth>0){
             this._drawBorder(); 
         }
