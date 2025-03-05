@@ -37,7 +37,7 @@ class Widget{
     backgroundColor="#fff";
     name;
     borderColor="#000";
-    borderWidth=1;
+    borderWidth=0;
     
     constructor(parent){
         this.parent=parent;
@@ -206,6 +206,7 @@ class Window extends Widget{
     mouseClientPos={x:0,y:0};
     mouseStatus=void 0;
     mouseStatusChangePos={x:0,y:0};
+    borderWidth=1;
     constructor(parent){
         super(parent);
         this.width=800;
@@ -234,13 +235,44 @@ class Window extends Widget{
     }
 }
 
+class TitleBar extends Widget{
+    title={
+        text:"",
+        color:"#000",
+        fontSize:16,
+        fontWeight:"normal",
+        fontFamily:"Arial",
+        margin:{
+            left:10,
+            right:0,
+            top:5,
+            bottom:0
+        },
+    }
+    height=30;
+    constructor(parent){
+        if(!parent||parent instanceof Window === false){
+            throw new Error(`Window is required, but received ${parent? parent.constructor.name : 'null'}`); 
+        }
+        super(parent);
+        this.setSize(parent.width,this.height);
+        this.backgroundColor="#ccc";
+        this.title.text=parent.name?parent.name:"Window";
+    }
+    _draw(){
+        super._draw();
+        const graphics=app.graphics;
+        graphics.font = `${this.title.fontWeight} ${this.title.fontSize}px ${this.title.fontFamily}`;
+        graphics.fillStyle = this.title.color;
+        const x = this.absoluteX + this.title.margin.left;
+        const y = this.absoluteY + this.title.margin.top + this.title.fontSize;
+        graphics.fillText(this.title.text, x, y);
+    }
+}
+
 const app = new Application(document.querySelector('canvas'));
 const desktop = new Desktop(app);
 const win = new Window(desktop);
-const widget = new Widget(win);
-widget.borderWidth=1;
-widget.backgroundColor="#f00";
-widget.setPos(0,0);
-widget.setSize(800,50);
+const titleBar = new TitleBar(win);
 </script>
 </html>
