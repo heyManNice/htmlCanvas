@@ -136,6 +136,17 @@ class Widget{
     isInArea(x,y){
         return x>this.absoluteX&&x<this.absoluteX+this.width&&y>this.absoluteY&&y<this.absoluteY+this.height;
     }
+    drawLine(points,color="#000",lineWidth=1){
+        const graphics=app.graphics;
+        graphics.strokeStyle=color;
+        graphics.lineWidth=lineWidth;
+        graphics.beginPath();
+        graphics.moveTo(this.absoluteX+points[0][0],this.absoluteY+points[0][1]);
+        for(const point of points){
+            graphics.lineTo(this.absoluteX+point[0],this.absoluteY+point[1]);
+        }
+        graphics.stroke();
+    }
 }
 
 class Application{
@@ -304,6 +315,8 @@ class TitleBar extends Widget{
             bottom:0
         },
     }
+    controller;
+    buttons={};
     height=30;
     constructor(parent){
         if(!parent||parent instanceof Window === false){
@@ -313,15 +326,51 @@ class TitleBar extends Widget{
         this.setSize(parent.width,this.height);
         this.backgroundColor="#ccc";
         this.title.text=parent.name?parent.name:"Window";
+        //控制器位置
+        this.controller=new Widget(this);
+        this.controller.backgroundColor=null;
+        this.controller.setSize(90,30);
+        this.controller.setPos(this.width-90,0);
+
+        //三个按钮
+        this.buttons.minimize=new Widget(this.controller);
+        const minimize = this.buttons.minimize;
+        minimize.backgroundColor=null;
+        minimize.setSize(30,30).setPos(0,0);
+        minimize.onDraw=()=>{
+            minimize.drawLine([[10,18],[20,18]]);
+        }
+        this.buttons.maximize=new Widget(this.controller);
+        const maximize = this.buttons.maximize;
+        maximize.backgroundColor=null;
+        maximize.setSize(30,30).setPos(30,0);
+        maximize.onDraw=()=>{
+            maximize.drawLine([[10,10],[10,20],[20,20],[20,10],[10,10]]);
+        }
+        this.buttons.close=new Widget(this.controller);
+        const close = this.buttons.close;
+        close.backgroundColor=null;
+        close.setSize(30,30).setPos(60,0);
+        close.onDraw=()=>{
+            close.drawLine([[10,10],[20,20]]);
+            close.drawLine([[10,20],[20,10]]);
+        }
     }
-    _draw(){
-        super._draw();
+    _drawTitleText(){
         const graphics=app.graphics;
         graphics.font = `${this.title.fontWeight} ${this.title.fontSize}px ${this.title.fontFamily}`;
         graphics.fillStyle = this.title.color;
         const x = this.absoluteX + this.title.margin.left;
         const y = this.absoluteY + this.title.margin.top + this.title.fontSize;
         graphics.fillText(this.title.text, x, y);
+    }
+    _drawButtons(){
+        
+    }
+    _draw(){
+        super._draw();
+        this._drawTitleText();
+        this._drawButtons();
     }
     _loop(){
         super._loop();
