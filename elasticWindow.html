@@ -14,6 +14,7 @@
             display: block;
             height: 100vh;
             width: 100vw;
+            
         }
     </style>
 </head>
@@ -84,23 +85,25 @@ class Widget{
             child._draw();
         }
     }
-    _mouseDown(){
-        if(this.onMouseDown){
-            this.onMouseDown();
+    _mouseLDown(){
+        if(this.onMouseLDown){
+            this.onMouseLDown();
         }
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
-                child._mouseDown(); 
+                child._mouseLDown();
+                break;
             }
         }
     }
-    _mouseUp(){
-        if(this.onMouseUp){
-            this.onMouseUp();
+    _mouseLUp(){
+        if(this.onMouseLUp){
+            this.onMouseLUp();
         }
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
-                child._mouseUp(); 
+                child._mouseLUp();
+                break;
             }
         }
     }
@@ -110,7 +113,7 @@ class Widget{
         return this; 
     }
     isInArea(x,y){
-        return x>this.x&&x<this.x+this.width&&y>this.y&&y<this.y+this.height; 
+        return x>this.absoluteX&&x<this.absoluteX+this.width&&y>this.absoluteY&&y<this.absoluteY+this.height;
     }
 }
 
@@ -157,22 +160,31 @@ class Application{
             this.mouse.absoluteY = e.clientY*this.ratio;
         });
         this.canvas.addEventListener('mousedown', (e) => {
-            for(const child of this.children){
-                if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
-                    child._mouseDown();
-                } 
+            //左键
+            if(e.button===0){
+                for(const child of this.children){
+                    if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                        child._mouseLDown();
+                        break;
+                    } 
+                }
             }
         });
         this.canvas.addEventListener('mouseup', (e) => {
-            for(const child of this.children){
-                if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
-                    child._mouseUp();
+            if(e.button===0){
+                for(const child of this.children){
+                    if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                        child._mouseLUp();
+                        break;
+                    } 
                 }
             }
         })
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); 
+        })
     }
 }
-
 
 class Desktop extends Widget{
     absoluteX=0;
@@ -200,6 +212,22 @@ class Desktop extends Widget{
         this._draw();
         requestAnimationFrame(()=>{this._loop()});
     }
+    _draw(){
+        const {mouse,graphics}=app;
+        if(this.borderWidth>0){
+            this._drawBorder(); 
+        }
+        if(this.backgroundColor){
+            this._drawBackground(); 
+        }
+        this.onDraw(app);
+        for(let i = this.children.length - 1; i >= 0; i--) {
+            const child = this.children[i];
+            if (child instanceof Window) {
+                child._draw();
+            }
+        }
+    }
 }
 
 class Window extends Widget{
@@ -207,31 +235,36 @@ class Window extends Widget{
     mouseStatus=void 0;
     mouseStatusChangePos={x:0,y:0};
     borderWidth=1;
+    titleBar;
     constructor(parent){
         super(parent);
+        this.moveToTop();
         this.width=800;
         this.height=600;
         this.x=app.monitor.width/2-this.width/2;
         this.y=app.monitor.height/2-this.height/2;
+        this.titleBar=new TitleBar(this);
     }
-    _loop(){
-        super._loop();
-        const mouse=app.mouse;
-        if(this.mouseStatus==="down"){
-            this.x=mouse.absoluteX-this.mouseStatusChangeClientPos.x;
-            this.y=mouse.absoluteY-this.mouseStatusChangeClientPos.y;
+    setTitle(title){
+        this.titleBar.title.text=title;
+        this.name = title;
+        return this;
+    }
+    onMouseLDown(){
+        this.moveToTop();
+    }
+    //移动到最顶端
+    moveToTop(){
+        //找到桌面
+        const desktop = app.children[0];
+        if(desktop instanceof Desktop === false){
+            throw new Error(`当前桌面不存在`);
         }
-
-    }
-    onMouseDown(){
-        const {absoluteX,absoluteY} = app.mouse;
-        this.mouseStatusChangeClientPos = {x:absoluteX-this.x,y:absoluteY-this.y};
-        this.mouseStatus = "down";
-    }
-    onMouseUp(){
-        const {absoluteX,absoluteY} = app.mouse;
-        this.mouseStatusChangeClientPos = {absoluteX,absoluteY};
-        this.mouseStatus = "up";
+        const index = desktop.children.indexOf(this);
+        if (index !== -1) {
+            desktop.children.splice(index, 1);
+            desktop.children.unshift(this);
+        }
     }
 }
 
@@ -268,11 +301,35 @@ class TitleBar extends Widget{
         const y = this.absoluteY + this.title.margin.top + this.title.fontSize;
         graphics.fillText(this.title.text, x, y);
     }
+    _loop(){
+        super._loop();
+        const mouse=app.mouse;
+        if(this.mouseStatus==="down"){
+            this.parent.x=mouse.absoluteX-this.parent.mouseStatusChangeClientPos.x;
+            this.parent.y=mouse.absoluteY-this.parent.mouseStatusChangeClientPos.y;
+        }
+
+    }
+    onMouseLDown(){
+        const {absoluteX,absoluteY} = app.mouse;
+        this.parent.mouseStatusChangeClientPos = {x:absoluteX-this.parent.x,y:absoluteY-this.parent.y};
+        this.mouseStatus = "down";
+    }
+    onMouseLUp(){
+        const {absoluteX,absoluteY} = app.mouse;
+        this.parent.mouseStatusChangeClientPos = {x:absoluteX-this.parent.x,y:absoluteY-this.parent.y};
+        this.mouseStatus = "up";
+    }
 }
 
 const app = new Application(document.querySelector('canvas'));
 const desktop = new Desktop(app);
-const win = new Window(desktop);
-const titleBar = new TitleBar(win);
+for(let i=0;i<5;i++){
+    const x = 300 + i*50;
+    const y = 300 + i*50;
+    const window = new Window(desktop);
+    window.setPos(x,y)
+          .setTitle(`Window ${i}`);
+}
 </script>
 </html>
