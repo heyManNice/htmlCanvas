@@ -106,26 +106,33 @@ class Widget{
             child._draw();
         }
     }
+    /**
+     * 带冒泡的事件
+     * _mouseLDown带冒泡
+     * onMouseLDown不带冒泡
+     */
     _mouseLDown(){
-        if(this.onMouseLDown){
-            this.onMouseLDown();
-        }
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
                 child._mouseLDown();
-                break;
+                return;
             }
+        }
+        //当事件传送中断时执行
+        if(this.onMouseLDown){
+            this.onMouseLDown();
         }
     }
     _mouseLUp(){
-        if(this.onMouseLUp){
-            this.onMouseLUp();
-        }
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
                 child._mouseLUp();
-                break;
+                return;
             }
+        }
+        //当事件传送中断时执行
+        if(this.onMouseLUp){
+            this.onMouseLUp();
         }
     }
     setSize(width,height){
@@ -278,7 +285,8 @@ class Window extends Widget{
         this.name = title;
         return this;
     }
-    onMouseLDown(){
+    _mouseLDown(){
+        super._mouseLDown();
         this.moveToTop();
     }
     //移动到最顶端
