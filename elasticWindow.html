@@ -205,8 +205,6 @@ class Desktop extends Widget{
     absoluteY=0;
     x=0;
     y=0;
-    canvas;
-    graphics;
     constructor(app){
         if(!app||app instanceof Application === false){
             throw new Error(`Application is required, but received ${app? app.constructor.name : 'null'}`); 
@@ -347,7 +345,7 @@ for(let i=0;i<5;i++){
     const y = 300 + i*50;
     const window = new Window(desktop);
     window.setPos(x,y)
-          .setSize(400,300)
+          .setSize(800,600)
           .setTitle(`Window ${i}`);
 }
 </script>
