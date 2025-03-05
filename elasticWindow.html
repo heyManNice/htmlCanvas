@@ -39,8 +39,14 @@ class Widget{
     name;
     borderColor="#000";
     borderWidth=0;
+
+    //摧毁标记
+    destroyed=false;
     
     constructor(parent){
+        if(parent instanceof Widget ===true && parent.destroyed===true){
+            throw new Error(`parent is destroyed`);
+        }
         this.parent=parent;
         if(parent){
             parent.children.push(this); 
@@ -78,6 +84,7 @@ class Widget{
             }
         }
         this.parent=null;
+        this.destroyed=true;
     }
     _loop(){
         this.absoluteX=this.x+this.parent.absoluteX;
