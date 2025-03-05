@@ -42,6 +42,8 @@ class Widget{
 
     //摧毁标记
     destroyed=false;
+
+    mouseState = "leave"
     
     constructor(parent){
         if(parent instanceof Widget ===true && parent.destroyed===true){
@@ -123,6 +125,9 @@ class Widget{
             this.onMouseLDown();
         }
     }
+    /**
+     * 冒泡事件
+     */
     _mouseLUp(){
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
@@ -133,6 +138,62 @@ class Widget{
         //当事件传送中断时执行
         if(this.onMouseLUp){
             this.onMouseLUp();
+        }
+    }
+    /**
+     * 冒泡事件
+     */
+    _mouseMove(){
+        this.mouseState="moving";
+        for(const child of this.children){
+            if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                if(child.mouseState!="moving"){
+                    child._mouseEnter();
+                }
+                child._mouseMove();
+                return;
+            }
+        }
+        //当事件传送中断时执行
+        if(this.onMouseMove){
+            this.onMouseMove();
+        }
+        for(const child of this.children){
+            if(child.mouseState==="moving"){
+                child._mouseLeave();
+            } 
+        }
+    }
+    /**
+     * 冒泡事件
+     */
+    _mouseEnter(){
+        this.mouseState="enter";
+        for(const child of this.children){
+            if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                child._mouseEnter();
+                return;
+            }
+        }
+        //当事件传送中断时执行
+        if(this.onMouseEnter){
+            this.onMouseEnter();
+        }
+    }
+    /**
+     * 冒泡事件
+     * 
+     * 所有子元素都要检查鼠标是否离开了自己
+     */
+    _mouseLeave(){
+        this.mouseState="leave";
+        for(const child of this.children){
+            if(child.mouseState==="moving"){
+                child._mouseLeave(); 
+            }
+        }
+        if(this.onMouseLeave){
+            this.onMouseLeave();
         }
     }
     setSize(width,height){
@@ -197,6 +258,13 @@ class Application{
         this.canvas.addEventListener('mousemove', (e) => {
             this.mouse.absoluteX = e.clientX*this.ratio;
             this.mouse.absoluteY = e.clientY*this.ratio;
+
+            for(const child of this.children){
+                if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                    child._mouseMove();
+                    break;
+                } 
+            }
         });
         this.canvas.addEventListener('mousedown', (e) => {
             //左键
@@ -362,6 +430,15 @@ class TitleBar extends Widget{
         close.onDraw=()=>{
             close.drawLine([[10,10],[20,20]]);
             close.drawLine([[10,20],[20,10]]);
+        }
+        close.onMouseEnter=()=>{
+            close.backgroundColor="#f00"; 
+        }
+        close.onMouseLeave=()=>{
+            close.backgroundColor=null; 
+        }
+        close.onMouseLDown=()=>{
+            parent.destroy();
         }
     }
     _drawTitleText(){
