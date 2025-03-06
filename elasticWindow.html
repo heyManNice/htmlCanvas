@@ -160,17 +160,13 @@ class Widget{
         if(this.onMouseMove){
             this.onMouseMove();
         }
-        for(const child of this.children){
-            if(child.mouseState==="moving"){
-                child._mouseLeave();
-            } 
-        }
     }
     /**
      * 冒泡事件
      */
     _mouseEnter(){
         this.mouseState="enter";
+        app.mouseEnterWidgets.push(this);
         for(const child of this.children){
             if(child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
                 child._mouseEnter();
@@ -231,6 +227,9 @@ class Application{
         absoluteX:0,
         absoluteY:0
     }
+
+    //用于记录鼠标进入的widget，检测鼠标是否移出了该控件
+    mouseEnterWidgets=[];
     widgetsCount=0;
     constructor(element){
         if(!element||element.nodeName !== 'CANVAS'){
@@ -323,6 +322,15 @@ class Desktop extends Widget{
             child._loop();
         }
         this._draw();
+        for(const child of app.mouseEnterWidgets){
+            if(!child.isInArea(app.mouse.absoluteX,app.mouse.absoluteY)){
+                child._mouseLeave();
+                const index = app.mouseEnterWidgets.indexOf(child);
+                if (index!== -1) {
+                    app.mouseEnterWidgets.splice(index, 1);
+                }
+            }
+        }
         requestAnimationFrame(()=>{this._loop()});
     }
     _draw(){
@@ -348,7 +356,7 @@ class Desktop extends Widget{
             const framePerSecond=Math.round(1000/(this.drawEndTime-lastDrawEndTime));
             const frameRenderTime = Math.round((this.drawEndTime - this.drawStartTime)*1000).toString().padStart(3, '0');;
             this.drawText(`${framePerSecond} FPS  ${app.widgetsCount}Widgets  FRT:${frameRenderTime}us`,10,26,"#000","normal 16px Arial");
-            this.drawText(`Mouse: (${Math.round(app.mouse.absoluteX)},${Math.round(app.mouse.absoluteY)})`,10,46,"#000","normal 16px Arial");
+            this.drawText(`Mouse: (${Math.round(app.mouse.absoluteX)},${Math.round(app.mouse.absoluteY)})  EnterWidgets:${app.mouseEnterWidgets.length}`,10,46,"#000","normal 16px Arial");
             this.drawText(`Desktop: (${this.width},${this.height})`,10,66,"#000","normal 16px Arial")
         }
     }
