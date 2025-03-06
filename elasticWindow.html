@@ -215,6 +215,12 @@ class Widget{
         }
         graphics.stroke();
     }
+    drawText(text,x=0,y=0,color="#000",font="12px Arial"){
+        const graphics=app.graphics;
+        graphics.fillStyle=color;
+        graphics.font=font;
+        graphics.fillText(text,this.absoluteX+x,this.absoluteY+y);
+    }
 }
 
 class Application{
@@ -416,12 +422,24 @@ class TitleBar extends Widget{
         minimize.onDraw=()=>{
             minimize.drawLine([[10,18],[20,18]]);
         }
+        minimize.onMouseEnter=()=>{
+            minimize.backgroundColor="#ddd"; 
+        }
+        minimize.onMouseLeave=()=>{
+            minimize.backgroundColor=null; 
+        }
         this.buttons.maximize=new Widget(this.controller);
         const maximize = this.buttons.maximize;
         maximize.backgroundColor=null;
         maximize.setSize(30,30).setPos(30,0);
         maximize.onDraw=()=>{
             maximize.drawLine([[10,10],[10,20],[20,20],[20,10],[10,10]]);
+        }
+        maximize.onMouseEnter=()=>{
+            maximize.backgroundColor="#ddd"; 
+        }
+        maximize.onMouseLeave=()=>{
+            maximize.backgroundColor=null; 
         }
         this.buttons.close=new Widget(this.controller);
         const close = this.buttons.close;
@@ -443,11 +461,11 @@ class TitleBar extends Widget{
     }
     _drawTitleText(){
         const graphics=app.graphics;
-        graphics.font = `${this.title.fontWeight} ${this.title.fontSize}px ${this.title.fontFamily}`;
-        graphics.fillStyle = this.title.color;
-        const x = this.absoluteX + this.title.margin.left;
-        const y = this.absoluteY + this.title.margin.top + this.title.fontSize;
-        graphics.fillText(this.title.text, x, y);
+        const font = `${this.title.fontWeight} ${this.title.fontSize}px ${this.title.fontFamily}`;
+        const color = this.title.color;
+        const x = this.title.margin.left;
+        const y = this.title.margin.top + this.title.fontSize;
+        this.drawText(this.title.text,x,y,color,font);
     }
     _drawButtons(){
         
