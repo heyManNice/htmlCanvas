@@ -43,7 +43,7 @@ class Widget{
     //摧毁标记
     destroyed=false;
 
-    mouseState = "leave"
+    mouseState = "leave";
     
     constructor(parent){
         if(parent instanceof Widget ===true && parent.destroyed===true){
@@ -53,6 +53,7 @@ class Widget{
         if(parent){
             parent.children.push(this); 
         }
+        app.widgetsCount++;
     }
     _drawBorder(){
         const graphics=app.graphics;
@@ -87,6 +88,7 @@ class Widget{
         }
         this.parent=null;
         this.destroyed=true;
+        app.widgetsCount--;
     }
     _loop(){
         this.absoluteX=this.x+this.parent.absoluteX;
@@ -229,6 +231,7 @@ class Application{
         absoluteX:0,
         absoluteY:0
     }
+    widgetsCount=0;
     constructor(element){
         if(!element||element.nodeName !== 'CANVAS'){
             throw new Error(`canvas element is required, but received ${element ? element.nodeName : 'null'}`);
@@ -323,8 +326,11 @@ class Desktop extends Widget{
         requestAnimationFrame(()=>{this._loop()});
     }
     _draw(){
+        if(this.isShowPerformance){
+            this.drawStartTime = performance.now();;
+        }
         if(this.borderWidth>0){
-            this._drawBorder(); 
+            this._drawBorder();
         }
         if(this.backgroundColor){
             this._drawBackground(); 
@@ -336,7 +342,23 @@ class Desktop extends Widget{
                 child._draw();
             }
         }
+        if(this.isShowPerformance){
+            const lastDrawEndTime = this.drawEndTime;
+            this.drawEndTime = performance.now();
+            const framePerSecond=Math.round(1000/(this.drawEndTime-lastDrawEndTime));
+            const frameRenderTime = Math.round((this.drawEndTime - this.drawStartTime)*1000).toString().padStart(3, '0');;
+            this.drawText(`${framePerSecond} FPS  ${app.widgetsCount}Widgets  FRT:${frameRenderTime}us`,10,26,"#000","normal 16px Arial");
+            this.drawText(`Mouse: (${Math.round(app.mouse.absoluteX)},${Math.round(app.mouse.absoluteY)})`,10,46,"#000","normal 16px Arial");
+            this.drawText(`Desktop: (${this.width},${this.height})`,10,66,"#000","normal 16px Arial")
+        }
     }
+    
+    isShowPerformance = false;
+    
+    setShowPerformance(enable){
+        this.isShowPerformance=enable;
+    }
+
 }
 
 class Window extends Widget{
@@ -498,6 +520,7 @@ class TitleBar extends Widget{
 
 const app = new Application(document.querySelector('canvas'));
 const desktop = new Desktop(app);
+desktop.setShowPerformance(true);
 for(let i=0;i<5;i++){
     const x = 300 + i*50;
     const y = 300 + i*50;
