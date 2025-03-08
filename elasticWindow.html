@@ -393,6 +393,25 @@ class Window extends Widget{
         super._mouseLDown();
         this.moveToTop();
     }
+    _drawShadow(){
+        const graphics=app.graphics;
+        const windows = this.parent.children;
+        if(windows.length&&windows[0]==this){
+            const topWindow = windows[0];
+            graphics.shadowColor="rgba(0,0,0,0.5)";
+            graphics.shadowBlur=15; 
+        }else{
+            graphics.shadowColor="rgba(0,0,0,0.2)";
+            graphics.shadowBlur=15;
+        }
+        graphics.fillRect(this.absoluteX,this.absoluteY,this.width,this.height);
+        graphics.shadowColor=null;
+        graphics.shadowBlur=0;
+    }
+    _draw(){
+        this._drawShadow();
+        super._draw();
+    }
     //移动到最顶端
     moveToTop(){
         //找到桌面
