@@ -375,6 +375,7 @@ class Window extends Widget{
     mouseStatusChangePos={x:0,y:0};
     borderWidth=1;
     titleBar;
+    isMaximize=false;
     constructor(parent){
         super(parent);
         this.moveToTop();
@@ -430,6 +431,29 @@ class Window extends Widget{
         this.titleBar.setSize(width,this.titleBar.height);
         return this;
     }
+    setMaximize(){
+        this.isMaximize=true;
+        this.restoreProps = {
+            x:this.x,
+            y:this.y,
+            width:this.width,
+            height:this.height
+        }
+        this.setPos(0,0);
+        this.setSize(app.monitor.width,app.monitor.height);
+        return this;
+    }
+    setRestore(){
+        this.isMaximize=false;
+        if(this.restoreProps){
+            this.setPos(this.restoreProps.x,this.restoreProps.y);
+            this.setSize(this.restoreProps.width,this.restoreProps.height); 
+        }else{
+            this.setPos(app.monitor.width/2-this.width/2,app.monitor.height/2-this.height/2);
+            this.setSize(800,600);
+        }
+        return this; 
+    }
 }
 
 class TitleBar extends Widget{
@@ -454,14 +478,10 @@ class TitleBar extends Widget{
             throw new Error(`Window is required, but received ${parent? parent.constructor.name : 'null'}`); 
         }
         super(parent);
-        this.setSize(parent.width,this.height);
         this.backgroundColor="#ccc";
-        this.title.text=parent.name?parent.name:"Window";
         //控制器位置
         this.controller=new Widget(this);
         this.controller.backgroundColor=null;
-        this.controller.setSize(90,30);
-        this.controller.setPos(this.width-90,0);
 
         //三个按钮
         this.buttons.minimize=new Widget(this.controller);
@@ -482,13 +502,26 @@ class TitleBar extends Widget{
         maximize.backgroundColor=null;
         maximize.setSize(30,30).setPos(30,0);
         maximize.onDraw=()=>{
-            maximize.drawLine([[10,10],[10,20],[20,20],[20,10],[10,10]]);
+            if(parent.isMaximize){
+                maximize.drawLine([[13,10],[20,10],[20,17]]);
+                maximize.drawLine([[10,12],[10,20],[18,20],[18,12],[10,12]]);
+            }else{
+                maximize.drawLine([[10,10],[10,20],[20,20],[20,10],[10,10]]);
+            }
         }
         maximize.onMouseEnter=()=>{
             maximize.backgroundColor="#ddd"; 
         }
         maximize.onMouseLeave=()=>{
             maximize.backgroundColor=null; 
+        }
+        maximize.onMouseLUp=()=>{
+            const window = this.parent;
+            if(window.isMaximize){
+                window.setRestore();
+            }else{
+                window.setMaximize();
+            }
         }
         this.buttons.close=new Widget(this.controller);
         const close = this.buttons.close;
@@ -531,7 +564,10 @@ class TitleBar extends Widget{
             this.parent.x=mouse.absoluteX-this.parent.mouseStatusChangeClientPos.x;
             this.parent.y=mouse.absoluteY-this.parent.mouseStatusChangeClientPos.y;
         }
-
+        this.controller.setSize(90,30);
+        this.controller.setPos(this.width-90,0);
+        this.setSize(this.parent.width,this.height);
+        this.title.text=parent.name?parent.name:"Window";
     }
     onMouseLDown(){
         const {absoluteX,absoluteY} = app.mouse;
