@@ -135,6 +135,7 @@
             height: 95%;
             border: none;
             border-radius: 1rem;
+            background-color: white;
         }
         footer{
             flex: 0 0 10rem;
@@ -280,15 +281,13 @@
 </body>
 <script>
     const Project_Files_Data = [];
-    const iframe = document.querySelector('iframe');
-    let timer;
-    const observer = new ResizeObserver(() => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            iframe.contentWindow.location.reload();
+    
+    window.addEventListener('resize', () => {
+        clearTimeout(window.debounceTimer);
+        window.debounceTimer = setTimeout(() => {
+            document.querySelector('iframe').contentWindow.location.reload();
         }, 100);
     });
-    observer.observe(iframe);
 
     //setCssDebugMode(1);
     const htp = new HtmlTemplateProcessor();
