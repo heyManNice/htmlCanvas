@@ -31,6 +31,12 @@
         keyMap = {
             q:'up',
             e:'up',
+            w:'up',
+            a:'up',
+            s:'up',
+            d:'up',
+            j:'up',
+            k:'up'
         };
         constructor(){
 
@@ -141,6 +147,7 @@
             if(this.player.keyMap[e.key]){
                 this.player.keyMap[e.key] = 'down';
             }
+            
         }
         onKeyUp(e){
             if(this.player.keyMap[e.key]){
@@ -173,6 +180,31 @@
             }
             if(this.player.keyMap.e === 'down'){
                 this.player.angle += rotateSpeed;
+            }
+            if(this.player.keyMap.j === 'down'){
+                this.player.angle -= rotateSpeed;
+            }
+            if(this.player.keyMap.k === 'down'){
+                this.player.angle += rotateSpeed;
+            }
+            //移动速度
+            const moveSpeed = 0.3;
+
+            if(this.player.keyMap.w === 'down'){
+                this.player.absoluteX += Math.cos(this.player.angle) * moveSpeed;
+                this.player.absoluteY += Math.sin(this.player.angle) * moveSpeed;
+            }
+            if(this.player.keyMap.a === 'down'){
+                this.player.absoluteX += Math.sin(this.player.angle) * moveSpeed;
+                this.player.absoluteY -= Math.cos(this.player.angle) * moveSpeed;
+            }
+            if(this.player.keyMap.s === 'down'){
+                this.player.absoluteX -= Math.cos(this.player.angle) * moveSpeed;
+                this.player.absoluteY -= Math.sin(this.player.angle) * moveSpeed;
+            }
+            if(this.player.keyMap.d === 'down'){
+                this.player.absoluteX -= Math.sin(this.player.angle) * moveSpeed;
+                this.player.absoluteY += Math.cos(this.player.angle) * moveSpeed; 
             }
         }
         //获取两条有限长线段的交点
