@@ -210,10 +210,46 @@
             }
             return null;
         }
+        /**
+         * 获取玩家面前墙的距离
+         * @param {*} fov 视野
+         * @param {*} rayCount 射线数量
+         * @returns {number[]} 距离数组
+         */
+        getDistanceToWallArray(fov,rayCount){
+            let distanceArray = [];
+            //计算射线的角度
+            const rayAngle = fov / rayCount;
+            //计算射线的起始角度
+            const startAngle = this.player.angle - fov / 2;
+            //计算射线的终点角度
+            const endAngle = this.player.angle + fov / 2;
+            for(let i=0;i<rayCount;i++){
+                //计算射线的角度
+                const angle = startAngle + i * rayAngle;
+                //计算射线的终点
+                const endX = this.player.absoluteX + Math.cos(angle) * this.player.sightLineLength;
+                const endY = this.player.absoluteY + Math.sin(angle) * this.player.sightLineLength;
+                //障碍物交点
+                const intersection = this.getIntersectionWithMap({
+                    start:[this.player.absoluteX,this.player.absoluteY],
+                    end:[endX,endY] 
+                })
+                if(intersection){
+                    //计算射线的终点与玩家的距离
+                    const distance = Math.sqrt(Math.pow(intersection[0] - this.player.absoluteX,2) + Math.pow(intersection[1] - this.player.absoluteY,2));
+                    distanceArray.push(distance); 
+                }else{
+                    distanceArray.push(this.player.sightLineLength); 
+                }
+            }
+            return distanceArray;
+        }
         onDraw(){
             this._drawPlayer();
-            this._drawSightLine();
+            //this._drawSightLine();
             this._drawWorldMap();
+            this._drawSightLines();
             if(this.camera){
                 this.camera._draw(); 
             }
@@ -237,34 +273,36 @@
             ctx.arc(absoluteX,absoluteY,radius,0,Math.PI*2);
             ctx.fillStyle = '#000';
             ctx.fill();
-
-            //画视线
-            ctx.moveTo(absoluteX,absoluteY);
-            const dx = Math.cos(this.player.angle)*this.player.sightLineLength;
-            const dy = Math.sin(this.player.angle)*this.player.sightLineLength;
-            ctx.lineTo(absoluteX + dx,absoluteY + dy);
-            ctx.strokeStyle = '#000';
-            ctx.stroke();
-            
-            let s = this.getIntersectionWithMap({
-                start:[absoluteX,absoluteY],
-                end:[absoluteX + dx,absoluteY + dy] 
-            })
-
-            if(s){
-                ctx.beginPath();
-                ctx.arc(s[0],s[1],5,0,Math.PI*2);
-                ctx.fillStyle = '#000';
-                ctx.fill();
-            }
             
         }
-        _drawSightLine(){
-            const {x,y,angle,length} = this.player;
+        //画射线
+        _drawSightLines(){
             const ctx = app.graphics;
-            ctx.beginPath();
-            ctx.moveTo(x,y);
-            ctx.lineTo(x + Math.cos(angle)*length,y + Math.sin(angle)*length);
+            //画射线
+            const fov = Math.PI / 2;
+            const rayCount = 100;
+            const distanceArray = this.getDistanceToWallArray(fov,rayCount);
+            for(let i=0;i<distanceArray.length;i++){
+                //计算终点位置
+                const distance = distanceArray[i];
+                const angle = this.player.angle - fov / 2 + i * fov / rayCount;
+                const endX = this.player.absoluteX + Math.cos(angle) * distance;
+                const endY = this.player.absoluteY + Math.sin(angle) * distance;
+                ctx.beginPath();
+                ctx.moveTo(this.player.absoluteX,this.player.absoluteY);
+                ctx.lineTo(endX,endY);
+                ctx.strokeStyle = '#000';
+                ctx.stroke();
+
+            }
+        }
+        _drawSightLine(){
+            const ctx = app.graphics;
+            //画视线
+            ctx.moveTo(this.player.absoluteX,this.player.absoluteY);
+            const dx = Math.cos(this.player.angle)*this.player.sightLineLength;
+            const dy = Math.sin(this.player.angle)*this.player.sightLineLength;
+            ctx.lineTo(this.player.absoluteX + dx,this.player.absoluteY + dy);
             ctx.strokeStyle = '#000';
             ctx.stroke();
         }
