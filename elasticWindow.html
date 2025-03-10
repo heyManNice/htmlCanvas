@@ -454,6 +454,15 @@ class Window extends Widget{
         }
         return this; 
     }
+    _moveWithMouse(){
+        const mouse=app.mouse;
+        this.x=mouse.absoluteX-this.mouseStatusChangeClientPos.x;
+        this.y=mouse.absoluteY-this.mouseStatusChangeClientPos.y;
+    }
+    _saveMouseClientPos(){
+        const {absoluteX,absoluteY} = app.mouse;
+        this.mouseStatusChangeClientPos = {x:absoluteX-this.x,y:absoluteY-this.y};
+    }
 }
 
 class TitleBar extends Widget{
@@ -482,6 +491,7 @@ class TitleBar extends Widget{
         //控制器位置
         this.controller=new Widget(this);
         this.controller.backgroundColor=null;
+        this.controller.setSize(90,30);
 
         //三个按钮
         this.buttons.minimize=new Widget(this.controller);
@@ -541,6 +551,11 @@ class TitleBar extends Widget{
             parent.destroy();
         }
     }
+    setSize(width,height){
+       super.setSize(width,height);
+       this.controller.setPos(this.width-90,0);
+       return this; 
+    }
     _drawTitleText(){
         const graphics=app.graphics;
         const font = `${this.title.fontWeight} ${this.title.fontSize}px ${this.title.fontFamily}`;
@@ -549,35 +564,24 @@ class TitleBar extends Widget{
         const y = this.title.margin.top + this.title.fontSize;
         this.drawText(this.title.text,x,y,color,font);
     }
-    _drawButtons(){
-        
-    }
     _draw(){
         super._draw();
         this._drawTitleText();
-        this._drawButtons();
     }
     _loop(){
         super._loop();
-        const mouse=app.mouse;
         if(this.mouseStatus==="down"){
-            this.parent.x=mouse.absoluteX-this.parent.mouseStatusChangeClientPos.x;
-            this.parent.y=mouse.absoluteY-this.parent.mouseStatusChangeClientPos.y;
+            this.parent._moveWithMouse();
         }
-        this.controller.setSize(90,30);
-        this.controller.setPos(this.width-90,0);
-        this.setSize(this.parent.width,this.height);
-        this.title.text=parent.name?parent.name:"Window";
     }
+    
     onMouseLDown(){
-        const {absoluteX,absoluteY} = app.mouse;
-        this.parent.mouseStatusChangeClientPos = {x:absoluteX-this.parent.x,y:absoluteY-this.parent.y};
         this.mouseStatus = "down";
+        this.parent._saveMouseClientPos();
     }
     onMouseLUp(){
-        const {absoluteX,absoluteY} = app.mouse;
-        this.parent.mouseStatusChangeClientPos = {x:absoluteX-this.parent.x,y:absoluteY-this.parent.y};
         this.mouseStatus = "up";
+        this.parent._saveMouseClientPos();
     }
 }
 
