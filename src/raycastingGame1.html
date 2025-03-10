@@ -145,6 +145,49 @@
                 this.player.angle += rotateSpeed;
             }
         }
+        //获取两条有限长线段的交点
+        //与平常的数学题不一样的是
+        //坐标轴纵轴下半周部分是正方向
+        getIntersection(line1, line2) {
+            //第一条直线,y取反是为了翻转y方向
+            let x1 = line1.start[0];
+            let y1 = -line1.start[1];
+            let x2 = line1.end[0];
+            let y2 = -line1.end[1];
+
+            //求出y=kx+b的k和b
+            let k1 = (y2 - y1) / (x2 - x1);
+            let b1 = y1 - k1 * x1;
+
+            //第二条直线,复用变量
+            x1 = line2.start[0];
+            y1 = -line2.start[1];
+            x2 = line2.end[0];
+            y2 = -line2.end[1];
+
+            //求出y=kx+b的k和b
+            let k2 = (y2 - y1) / (x2 - x1);
+            let b2 = y1 - k2 * x1;
+
+            //如果k1和k2相等，说明两条直线平行，没有交点
+            if (k1 === k2) {
+                return null;
+            }
+
+            //求出交点的x坐标
+            let x = (b2 - b1) / (k1 - k2);
+            //求出交点的y坐标
+            let y = k1 * x + b1;
+
+            //计算交点是否在直线上
+            if (x >= Math.min(line1.start[0], line1.end[0]) && x <= Math.max(line1.start[0], line1.end[0]) &&
+                x >= Math.min(line2.start[0], line2.end[0]) && x <= Math.max(line2.start[0], line2.end[0])) {
+                //返回交点
+                return [x, -y];
+            }
+            
+            return null;
+        }
         onDraw(){
             this._drawPlayer();
             this._drawSightLine();
@@ -180,6 +223,28 @@
             ctx.lineTo(x + dx,y + dy);
             ctx.strokeStyle = '#000';
             ctx.stroke();
+            const sightLine={
+                start:[x,y],
+                end:[x + dx,y + dy]
+            }
+            const wallLine = {
+                start:[
+                    this.worldMap.walls[0].pos.start[0]+this.absoluteX,
+                    this.worldMap.walls[0].pos.start[1]+this.absoluteY
+                ],
+                end:[
+                    this.worldMap.walls[0].pos.end[0]+this.absoluteX,
+                    this.worldMap.walls[0].pos.end[1]+this.absoluteY
+                ]
+            }
+            const intersection = this.getIntersection(sightLine,wallLine);
+            if(intersection){
+                ctx.beginPath();
+                ctx.arc(intersection[0],intersection[1],radius,0,Math.PI*2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+            }
+            
         }
         _drawSightLine(){
             const {x,y,angle,length} = this.player;
