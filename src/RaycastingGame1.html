@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光线投射游戏</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        canvas{
+            background: #fff;
+            display: block;
+            height: 100vh;
+            width: 100vw;
+        }
+    </style>
+    <script src="./lib/canvasWidget.js"></script>
+</head>
+<body>
+    <canvas></canvas>
+</body>
+<script>
+    class Player{
+        x = 0;
+        y = 0;
+        radius = 4;
+        angle = 0;
+        sightLineLength = 100;
+        keyMap = {
+            q:'up',
+            e:'up',
+        };
+        constructor(){
+
+        }
+        setAngle(angle){
+            this.angle = angle; 
+        }
+        setPos(absoluteX,absoluteY){
+            this.x = absoluteX;
+            this.y = absoluteY;
+        }
+    }
+
+
+    class Radar extends Widget{
+        backgroundColor = '#fff';
+        player = new Player();
+        isMouseLeftDown = false;
+        constructor(desktop){
+            super(desktop);
+            this.setSize(600,600);
+            this.setPos(100,400);
+            this.player.setPos(this.x + 100,this.y + 100);
+            window.addEventListener("keydown",this.onKeyDown.bind(this));
+            window.addEventListener("keyup",this.onKeyUp.bind(this));
+        }
+        onKeyDown(e){
+            if(this.player.keyMap[e.key]){
+                this.player.keyMap[e.key] = 'down';
+            }
+        }
+        onKeyUp(e){
+            if(this.player.keyMap[e.key]){
+                this.player.keyMap[e.key] = 'up';
+            }
+        }
+        _loop(){
+           super._loop();
+           if(this.isMouseLeftDown){
+                const {absoluteX,absoluteY} = app.mouse;
+                if(!this.isInArea(absoluteX,absoluteY)){
+                    this.isMouseLeftDown = false;
+                    return;
+                }
+                this.player.x = absoluteX;
+                this.player.y = absoluteY;
+            }
+            //旋转速度
+            const rotateSpeed = 0.02;
+
+            if(this.player.keyMap.q === 'down'){
+                this.player.angle -= rotateSpeed;
+            }
+            if(this.player.keyMap.e === 'down'){
+                this.player.angle += rotateSpeed;
+            }
+        }
+        onDraw(){
+            this._drawPlayer();
+            this._drawSightLine();
+        }
+        _drawPlayer(){
+            const {x,y,radius} = this.player;
+            const ctx = app.graphics;
+            ctx.beginPath();
+            //画角色
+            ctx.arc(x,y,radius,0,Math.PI*2);
+            ctx.fillStyle = '#000';
+            ctx.fill();
+
+            //画视线
+            ctx.moveTo(x,y);
+            const dx = Math.cos(this.player.angle)*this.player.sightLineLength;
+            const dy = Math.sin(this.player.angle)*this.player.sightLineLength;
+            ctx.lineTo(x + dx,y + dy);
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+        }
+        _drawSightLine(){
+            const {x,y,angle,length} = this.player;
+            const ctx = app.graphics;
+            ctx.beginPath();
+            ctx.moveTo(x,y);
+            ctx.lineTo(x + Math.cos(angle)*length,y + Math.sin(angle)*length);
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+        }
+        onMouseLDown(){
+           this.isMouseLeftDown = true; 
+        }
+        onMouseLUp(){
+            this.isMouseLeftDown = false; 
+        }
+    }
+
+
+    const app = new Application(document.querySelector('canvas'));
+    const desktop = new Desktop(app);
+    desktop.setShowPerformance(true);
+    desktop.backgroundColor = '#3B3B3B';
+
+    const radar = new Radar(desktop);
+
+</script>
+</html>
