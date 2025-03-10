@@ -322,9 +322,7 @@ class Desktop extends Widget{
         this.onDraw();
         for(let i = this.children.length - 1; i >= 0; i--) {
             const child = this.children[i];
-            if (child instanceof Window) {
-                child._draw();
-            }
+            child._draw();
         }
         if(this.isShowPerformance){
             const lastDrawEndTime = this.drawEndTime;
