@@ -47,20 +47,50 @@
     class Camera{
         x = 600;
         y = 400;
-        width = 800;
+        width = 600;
         height = 500;
         backgroundColor = '#555';
         constructor(radar){
             this.radar = radar;
             radar.camera = this;
         }
-        _draw(){
+        _draw(distanceArray){
             const ctx = app.graphics;
             ctx.beginPath();
-            ctx.rect(this.x,this.y,this.width,this.height);
-            ctx.fillStyle = this.backgroundColor;
+            ctx.rect(this.x,this.y,this.width,300);
+            ctx.fillStyle = "#11102E";
             ctx.fill();
+            ctx.beginPath();
+            ctx.rect(this.x,this.y+300,this.width,200);
+            ctx.fillStyle = "#15151C";
+            ctx.fill();
+            this.draw3dWalls(distanceArray,500);
         }
+
+        /**
+         * 画伪3d的墙体
+         * 
+         * @param {number[]} distanceArray 距离数组
+         * @param {number} wallHeight 墙体高度 
+         */
+        draw3dWalls(distanceArray,wallHeight){
+            const ctx = app.graphics;
+
+            //计算每单位墙体的宽度
+            const wallWidth = this.width / distanceArray.length;
+
+            for(let i=0;i<distanceArray.length;i++){
+                const distance = distanceArray[i];
+                //计算墙体的高度
+                const wallHeight = 300 - distance*0.6;
+                ctx.beginPath();
+                ctx.rect(this.x + i * wallWidth,700-wallHeight/2,wallWidth,wallHeight);
+                let color = 255 - distance*0.6;
+                ctx.fillStyle = `rgb(${color},${color},${color})`;
+                ctx.fill();
+            }
+        }
+        
     }
 
     class Wall{
@@ -249,9 +279,12 @@
             this._drawPlayer();
             //this._drawSightLine();
             this._drawWorldMap();
-            this._drawSightLines();
+            const fov = Math.PI / 4;
+            const rayCount = 100;
+            const distanceArray = this.getDistanceToWallArray(fov,rayCount);
+            this._drawSightLines(fov,distanceArray);
             if(this.camera){
-                this.camera._draw(); 
+                this.camera._draw(distanceArray); 
             }
         }
         _drawWorldMap(){
@@ -276,16 +309,13 @@
             
         }
         //画射线
-        _drawSightLines(){
+        _drawSightLines(fov,distanceArray){
             const ctx = app.graphics;
             //画射线
-            const fov = Math.PI / 2;
-            const rayCount = 100;
-            const distanceArray = this.getDistanceToWallArray(fov,rayCount);
             for(let i=0;i<distanceArray.length;i++){
                 //计算终点位置
                 const distance = distanceArray[i];
-                const angle = this.player.angle - fov / 2 + i * fov / rayCount;
+                const angle = this.player.angle - fov / 2 + i * fov / distanceArray.length;
                 const endX = this.player.absoluteX + Math.cos(angle) * distance;
                 const endY = this.player.absoluteY + Math.sin(angle) * distance;
                 ctx.beginPath();
