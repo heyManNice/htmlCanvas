@@ -63,6 +63,34 @@
         }
     }
 
+    class Wall{
+        pos={
+            //x,y
+            start:[0,0],
+            end:[100,100]
+        }
+        constructor(start,end){
+            this.pos.start = start;
+            this.pos.end = end;
+        }
+    }
+    class WorldMap{
+        walls = [];
+        constructor(){
+            //左分支
+            this.walls.push(new Wall([20,200],[200,200]));
+            this.walls.push(new Wall([20,300],[200,300]));
+
+            //右分支
+            this.walls.push(new Wall([300,200],[480,200]));
+            this.walls.push(new Wall([300,300],[480,300]));
+
+            //下分支
+            this.walls.push(new Wall([200,300],[200,450]));
+            this.walls.push(new Wall([300,300],[300,450]));
+        }
+    }
+
     class Radar extends Widget{
         camera = null;
         backgroundColor = '#fff';
@@ -71,7 +99,8 @@
         x = 100;
         y = 400;
         width = 500;
-        height = 500
+        height = 500;
+        worldMap = new WorldMap();
         constructor(desktop){
             super(desktop);
             this.player.setPos(this.x + 100,this.y + 100);
@@ -119,9 +148,21 @@
         onDraw(){
             this._drawPlayer();
             this._drawSightLine();
+            this._drawWorldMap();
             if(this.camera){
                 this.camera._draw(); 
             }
+        }
+        _drawWorldMap(){
+            const ctx = app.graphics;
+            ctx.beginPath();
+            this.worldMap.walls.forEach(wall=>{
+                const {start,end} = wall.pos;
+                ctx.moveTo(this.absoluteX+start[0],this.absoluteY+start[1]);
+                ctx.lineTo(this.absoluteX+end[0],this.absoluteY+end[1]);
+            });
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
         }
         _drawPlayer(){
             const {x,y,radius} = this.player;
