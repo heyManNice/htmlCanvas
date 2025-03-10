@@ -44,15 +44,36 @@
         }
     }
 
+    class Camera{
+        x = 600;
+        y = 400;
+        width = 800;
+        height = 500;
+        backgroundColor = '#555';
+        constructor(radar){
+            this.radar = radar;
+            radar.camera = this;
+        }
+        _draw(){
+            const ctx = app.graphics;
+            ctx.beginPath();
+            ctx.rect(this.x,this.y,this.width,this.height);
+            ctx.fillStyle = this.backgroundColor;
+            ctx.fill();
+        }
+    }
 
     class Radar extends Widget{
+        camera = null;
         backgroundColor = '#fff';
         player = new Player();
         isMouseLeftDown = false;
+        x = 100;
+        y = 400;
+        width = 500;
+        height = 500
         constructor(desktop){
             super(desktop);
-            this.setSize(600,600);
-            this.setPos(100,400);
             this.player.setPos(this.x + 100,this.y + 100);
             window.addEventListener("keydown",this.onKeyDown.bind(this));
             window.addEventListener("keyup",this.onKeyUp.bind(this));
@@ -67,6 +88,13 @@
                 this.player.keyMap[e.key] = 'up';
             }
         }
+        onMouseLDown(){
+           this.isMouseLeftDown = true; 
+        }
+        onMouseLUp(){
+            this.isMouseLeftDown = false; 
+        }
+
         _loop(){
            super._loop();
            if(this.isMouseLeftDown){
@@ -91,6 +119,9 @@
         onDraw(){
             this._drawPlayer();
             this._drawSightLine();
+            if(this.camera){
+                this.camera._draw(); 
+            }
         }
         _drawPlayer(){
             const {x,y,radius} = this.player;
@@ -118,12 +149,6 @@
             ctx.strokeStyle = '#000';
             ctx.stroke();
         }
-        onMouseLDown(){
-           this.isMouseLeftDown = true; 
-        }
-        onMouseLUp(){
-            this.isMouseLeftDown = false; 
-        }
     }
 
 
@@ -133,6 +158,7 @@
     desktop.backgroundColor = '#3B3B3B';
 
     const radar = new Radar(desktop);
+    const camera = new Camera(radar);
 
 </script>
 </html>
