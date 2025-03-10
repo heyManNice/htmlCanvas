@@ -46,7 +46,7 @@ class Generator {
     }
     /**
      * 开始生成数据
-     * 将当前目录下的目标文件名写入data.js文件
+     * 将生成的数据写入主页文件
      */
     generate() {
         this.copyDirsFiles();
