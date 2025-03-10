@@ -23,11 +23,11 @@
 </body>
 <script>
     class Player{
-        x = 0;
-        y = 0;
+        absoluteX = 0;
+        absoluteY = 0;
         radius = 4;
         angle = 0;
-        sightLineLength = 100;
+        sightLineLength = 500;
         keyMap = {
             q:'up',
             e:'up',
@@ -39,8 +39,8 @@
             this.angle = angle; 
         }
         setPos(absoluteX,absoluteY){
-            this.x = absoluteX;
-            this.y = absoluteY;
+            this.absoluteX = absoluteX;
+            this.absoluteY = absoluteY;
         }
     }
 
@@ -132,11 +132,11 @@
                     this.isMouseLeftDown = false;
                     return;
                 }
-                this.player.x = absoluteX;
-                this.player.y = absoluteY;
+                this.player.absoluteX = absoluteX;
+                this.player.absoluteY = absoluteY;
             }
             //旋转速度
-            const rotateSpeed = 0.02;
+            const rotateSpeed = 0.01;
 
             if(this.player.keyMap.q === 'down'){
                 this.player.angle -= rotateSpeed;
@@ -159,33 +159,55 @@
             let k1 = (y2 - y1) / (x2 - x1);
             let b1 = y1 - k1 * x1;
 
-            //第二条直线,复用变量
-            x1 = line2.start[0];
-            y1 = -line2.start[1];
-            x2 = line2.end[0];
-            y2 = -line2.end[1];
+            //第二条直线
+            let x3 = line2.start[0];
+            let y3 = -line2.start[1];
+            let x4 = line2.end[0];
+            let y4 = -line2.end[1];
 
             //求出y=kx+b的k和b
-            let k2 = (y2 - y1) / (x2 - x1);
-            let b2 = y1 - k2 * x1;
+            let k2 = (y4 - y3) / (x4 - x3);
+            let b2 = y3 - k2 * x3;
 
             //如果k1和k2相等，说明两条直线平行，没有交点
             if (k1 === k2) {
                 return null;
             }
 
-            //求出交点的x坐标
-            let x = (b2 - b1) / (k1 - k2);
-            //求出交点的y坐标
-            let y = k1 * x + b1;
+            let x;
+            let y;
+            //如果k2是-无穷，那么第二根直线是垂直的
+            //解x就是这个线的x
+            if (k2 == -Infinity) {
+                x = x3;
+                y = k1 * x + b1;
+            }else{
+                //求出交点的x坐标
+                x = (b2 - b1) / (k1 - k2);
+                //求出交点的y坐标
+                y = k2 * x + b2;
+            }
 
             //计算交点是否在直线上
-            if (x >= Math.min(line1.start[0], line1.end[0]) && x <= Math.max(line1.start[0], line1.end[0]) &&
-                x >= Math.min(line2.start[0], line2.end[0]) && x <= Math.max(line2.start[0], line2.end[0])) {
-                //返回交点
-                return [x, -y];
+            if (x >= Math.min(x1, x2) && x <= Math.max(x1, x2) && x >= Math.min(x3, x4) && x <= Math.max(x3, x4)&&
+                y >= Math.min(y1, y2) && y <= Math.max(y1, y2) && y >= Math.min(y3, y4) && y <= Math.max(y3, y4)) {
+                return [x, -y]; 
             }
             
+            return null;
+        }
+        //获取视线与地图的交点
+        getIntersectionWithMap(sighetLine){
+            for(const wall of this.worldMap.walls){
+                const absoluteWallPos = {
+                    start:[this.absoluteX + wall.pos.start[0],this.absoluteY + wall.pos.start[1]],
+                    end:[this.absoluteX + wall.pos.end[0],this.absoluteY + wall.pos.end[1]] 
+                }
+                const intersection = this.getIntersection(sighetLine,absoluteWallPos);
+                if(intersection){
+                    return intersection; 
+                }
+            }
             return null;
         }
         onDraw(){
@@ -208,39 +230,30 @@
             ctx.stroke();
         }
         _drawPlayer(){
-            const {x,y,radius} = this.player;
+            const {absoluteX,absoluteY,radius} = this.player;
             const ctx = app.graphics;
             ctx.beginPath();
             //画角色
-            ctx.arc(x,y,radius,0,Math.PI*2);
+            ctx.arc(absoluteX,absoluteY,radius,0,Math.PI*2);
             ctx.fillStyle = '#000';
             ctx.fill();
 
             //画视线
-            ctx.moveTo(x,y);
+            ctx.moveTo(absoluteX,absoluteY);
             const dx = Math.cos(this.player.angle)*this.player.sightLineLength;
             const dy = Math.sin(this.player.angle)*this.player.sightLineLength;
-            ctx.lineTo(x + dx,y + dy);
+            ctx.lineTo(absoluteX + dx,absoluteY + dy);
             ctx.strokeStyle = '#000';
             ctx.stroke();
-            const sightLine={
-                start:[x,y],
-                end:[x + dx,y + dy]
-            }
-            const wallLine = {
-                start:[
-                    this.worldMap.walls[0].pos.start[0]+this.absoluteX,
-                    this.worldMap.walls[0].pos.start[1]+this.absoluteY
-                ],
-                end:[
-                    this.worldMap.walls[0].pos.end[0]+this.absoluteX,
-                    this.worldMap.walls[0].pos.end[1]+this.absoluteY
-                ]
-            }
-            const intersection = this.getIntersection(sightLine,wallLine);
-            if(intersection){
+            
+            let s = this.getIntersectionWithMap({
+                start:[absoluteX,absoluteY],
+                end:[absoluteX + dx,absoluteY + dy] 
+            })
+
+            if(s){
                 ctx.beginPath();
-                ctx.arc(intersection[0],intersection[1],radius,0,Math.PI*2);
+                ctx.arc(s[0],s[1],5,0,Math.PI*2);
                 ctx.fillStyle = '#000';
                 ctx.fill();
             }
