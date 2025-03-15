@@ -314,6 +314,13 @@
             if(this.camera){
                 this.camera._draw(distanceArray); 
             }
+            //画提示文字
+            const ctx = app.graphics;
+            ctx.beginPath();
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.fillText(`WASD按键分别对应操作：前进、左转、后退、右转`,this.x,this.y - 16);
+
         }
         _drawWorldMap(){
             const ctx = app.graphics;
