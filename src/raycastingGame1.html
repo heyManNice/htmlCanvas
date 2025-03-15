@@ -260,6 +260,7 @@
         }
         //获取视线与地图的交点
         getIntersectionWithMap(sighetLine){
+            const intersections = [];
             for(const wall of this.worldMap.walls){
                 const absoluteWallPos = {
                     start:[this.absoluteX + wall.pos.start[0],this.absoluteY + wall.pos.start[1]],
@@ -267,10 +268,23 @@
                 }
                 const intersection = this.getIntersection(sighetLine,absoluteWallPos);
                 if(intersection){
-                    return intersection; 
+                    intersections.push(intersection);
                 }
             }
-            return null;
+            if(!intersections.length){
+                return null; 
+            }
+            //找到离玩家最近的交点
+            let minDistance = 0;
+            let minIntersection = null;
+            for(let i=0;i<intersections.length;i++){
+                const distance = Math.sqrt(Math.pow(intersections[i][0] - this.player.absoluteX,2) + Math.pow(intersections[i][1] - this.player.absoluteY,2));
+                if(i === 0 || distance < minDistance){
+                    minDistance = distance;
+                    minIntersection = intersections[i];
+                }
+            }
+            return minIntersection;
         }
         /**
          * 获取玩家面前墙的距离
