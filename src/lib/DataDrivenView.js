@@ -144,7 +144,7 @@ class DataDrivenView {
     #parseElementAttribute(node){
         const attrs = node.attributes;
         if(!attrs.length) return;
-        for(const attr of attrs){
+        for(const attr of [...attrs]){
             const {name,value} = attr;
             if(!name.includes('__')) continue;
             const event = name.slice(2);
@@ -159,6 +159,8 @@ class DataDrivenView {
             node.addEventListener(event,()=>{
                 func.call(this.#variables);
             });
+            node.removeAttribute(name);
         }
+        
     }
 }
