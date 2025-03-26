@@ -1,0 +1,115 @@
+
+<script>
+    function log(...args){
+        console.log(...args);
+    }
+    class DataDrivenView {
+        constructor(){
+            this.response = this.response.bind(this);
+            window.addEventListener('load',this.render.bind(this));
+            //this.renderMap = new Map();
+        }
+        response(value){
+            const that = this;
+            const obj = {value}
+            return new Proxy(obj,{
+                set(target,key,value){
+                    target.value = value;
+                    that.render();
+                    return true;
+                }
+            });
+        }
+
+        render(){
+            if(!this.template){
+                this.template = document.querySelector('template');
+                this.template.parentNode.removeChild(this.template);
+            }
+            const childNodes = this.template.content.childNodes;
+            const fragment = document.createDocumentFragment();
+            
+            for(let i = 0; i < childNodes.length; i++){
+                fragment.appendChild(childNodes[i].cloneNode(true));
+            }
+
+            const walker = document.createTreeWalker(fragment,NodeFilter.SHOW_ALL,null,false);
+
+            while(walker.nextNode()){
+                const node = walker.currentNode;
+                if(node.nodeType === Node.TEXT_NODE){
+                   this.parseTextContent(node); 
+                }else if(node.nodeType === Node.ELEMENT_NODE){
+                    this.parseElementAttribute(node); 
+                }
+                
+            }
+            const body = document.querySelector('body');
+            body.replaceChildren(...fragment.childNodes);
+            
+            
+        }
+        /**
+         * 解析文字内容
+         * @param {*} node
+         */
+        parseTextContent(node){
+            const text = node.textContent;
+            if(!text.includes('__')) return;
+            node.textContent = text.replace(/__[a-zA-Z_$][a-zA-Z0-9_$]*__/g,(matched) => {
+                const keyword = matched.slice(2,-2);
+                const reslut = eval(`typeof ${keyword} === 'undefined' ? ${undefined} : ${keyword}`);
+                if(!reslut) return matched;
+                log("[变量]",keyword,'=',reslut.value);
+                return reslut.value;
+            });
+        }
+        /**
+         * 解析元素属性
+         * @param {*} node
+         */
+        parseElementAttribute(node){
+            const attrs = node.attributes;
+            if(!attrs.length) return;
+            for(const attr of attrs){
+                const {name,value} = attr;
+                if(!name.includes('__')) continue;
+                const keyword = name.slice(2);
+                log("[事件]",keyword);
+                node.addEventListener(keyword,eval(value));
+                node.removeAttribute(name);
+            }
+        }
+    }
+    const ddv = new DataDrivenView();
+</script>
+
+<template>
+    <p>__msg__</p>
+    <div>
+        <p class="count">__count__</p>
+        <button __click="increment" >+1</button>
+    </div>
+</template>
+
+<script>
+    const ref = ddv.response;
+
+    const msg = ref("这个页面不是canvas练习，而是数据驱动视图原理练习，我知道放哪儿了就随便放在这");
+    const count = ref(0);
+    const increment = () => {
+        count.value++;
+    };
+</script>
+
+<style>
+body{
+    margin: 0;
+    padding: 2rem;
+    text-align: center;
+}
+.count{
+    font-size: 3rem;    
+}
+</style>
+  
