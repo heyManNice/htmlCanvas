@@ -4,42 +4,41 @@
         console.log(...args);
     }
     class DataDrivenView {
+        #variables = {};
+        #functions = {};
+        #template = null;
         constructor(){
-            this.response = this.response.bind(this);
-            window.addEventListener('load',this.render.bind(this));
-            this.variables = {};
-            this.functions = {};
-            //this.renderMap = new Map();
+            window.addEventListener('load',this.#render.bind(this));
         }
         setData(data){
             for(const key in data){
-                this.variables[key] = this.response(data[key]);
+                this.#variables[key] = this.#response(data[key]);
             }
         }
 
         setFunc(func){
             for(const key in func){
-                this.functions[key] = func[key]; 
+                this.#functions[key] = func[key]; 
             }  
         }
-        response(value){
+        #response(value){
             const that = this;
             const obj = {value}
             return new Proxy(obj,{
                 set(target,key,value){
                     target.value = value;
-                    that.render();
+                    that.#render();
                     return true;
                 }
             });
         }
 
-        render(){
-            if(!this.template){
-                this.template = document.querySelector('template');
-                this.template.parentNode.removeChild(this.template);
+        #render(){
+            if(!this.#template){
+                this.#template = document.querySelector('template');
+                this.#template.parentNode.removeChild(this.#template);
             }
-            const childNodes = this.template.content.childNodes;
+            const childNodes = this.#template.content.childNodes;
             const fragment = document.createDocumentFragment();
             
             for(let i = 0; i < childNodes.length; i++){
@@ -51,9 +50,9 @@
             while(walker.nextNode()){
                 const node = walker.currentNode;
                 if(node.nodeType === Node.TEXT_NODE){
-                   this.parseTextContent(node); 
+                    this.#parseTextContent(node); 
                 }else if(node.nodeType === Node.ELEMENT_NODE){
-                    this.parseElementAttribute(node); 
+                    this.#parseElementAttribute(node); 
                 }
                 
             }
@@ -66,12 +65,12 @@
          * 解析文字内容
          * @param {*} node
          */
-        parseTextContent(node){
+        #parseTextContent(node){
             const text = node.textContent;
             if(!text.includes('__')) return;
             node.textContent = text.replace(/__[a-zA-Z_$][a-zA-Z0-9_$]*__/g,(matched) => {
                 const key = matched.slice(2,-2);
-                const variable = this.variables[key];
+                const variable = this.#variables[key];
                 if(!variable) return matched;
                 log("[变量]",key,'=',variable.value);
                 return variable.value;
@@ -81,7 +80,7 @@
          * 解析元素属性
          * @param {*} node
          */
-        parseElementAttribute(node){
+        #parseElementAttribute(node){
             const attrs = node.attributes;
             if(!attrs.length) return;
             for(const attr of attrs){
@@ -91,7 +90,7 @@
                 log("[事件]",event);
                 
                 node.addEventListener(event,()=>{
-                    this.functions[value].call(this.variables);
+                    this.#functions[value].call(this.#variables);
                 });
                 node.removeAttribute(name);
             }
