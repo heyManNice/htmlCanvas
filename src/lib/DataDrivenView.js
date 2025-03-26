@@ -110,7 +110,9 @@ class DataDrivenView {
         }
         const body = document.querySelector('body');
         body.replaceChildren(...fragment.childNodes);
-        
+
+        //清理script标签，保持整洁
+        document.querySelectorAll("script").forEach(script => script.remove());
         
     }
     /**
