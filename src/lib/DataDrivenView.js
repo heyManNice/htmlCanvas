@@ -148,12 +148,17 @@ class DataDrivenView {
             const {name,value} = attr;
             if(!name.includes('__')) continue;
             const event = name.slice(2);
-            log("[事件]",event);
+            
+            let func = this.#functions[value];
+            if(!func){
+                func = new Function(value);
+            }
+
+            log("[事件]",event,func);
             
             node.addEventListener(event,()=>{
-                this.#functions[value].call(this.#variables);
+                func.call(this.#variables);
             });
-            node.removeAttribute(name);
         }
     }
 }
