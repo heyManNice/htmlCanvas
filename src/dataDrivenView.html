@@ -10,17 +10,32 @@
         constructor(){
             window.addEventListener('load',this.#render.bind(this));
         }
+
+        /**
+         * 设置数据
+         * @param {{[key: string]:any}} data
+         */
         setData(data){
             for(const key in data){
                 this.#variables[key] = this.#response(data[key]);
             }
         }
 
+        /**
+         * 设置函数
+         * @param {{[key: string]:Function}} func
+         */
         setFunc(func){
             for(const key in func){
                 this.#functions[key] = func[key]; 
             }  
         }
+
+        /**
+         * 创建响应式对象
+         * @param {any} value
+         * @returns {Proxy}
+         */
         #response(value){
             const that = this;
             const obj = {value}
@@ -33,6 +48,10 @@
             });
         }
 
+        /**
+         * 渲染页面
+         * @returns {void}
+         */
         #render(){
             if(!this.#template){
                 this.#template = document.querySelector('template');
@@ -63,7 +82,7 @@
         }
         /**
          * 解析文字内容
-         * @param {*} node
+         * @param {Node} node
          */
         #parseTextContent(node){
             const text = node.textContent;
@@ -78,7 +97,7 @@
         }
         /**
          * 解析元素属性
-         * @param {*} node
+         * @param {Node} node
          */
         #parseElementAttribute(node){
             const attrs = node.attributes;
@@ -109,6 +128,7 @@
 
 <script>
     const ddv = new DataDrivenView();
+
     ddv.setData({
         msg:"这个页面不是canvas练习，而是数据驱动视图原理练习，我不知道放哪儿了就随便放在这",
         count:0
