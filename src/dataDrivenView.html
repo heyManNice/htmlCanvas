@@ -5,7 +5,7 @@
     <div>
         <p class="count">__count__ __count__</p>
         <p>test __count__</p>
-        <button __click="increment" __mouseenter="log('count is', this.count.value)">+1</button>
+        <button __click="increment" __mouseenter="log('count is', this.count)">+1</button>
     </div>
 </template>
 
@@ -19,7 +19,7 @@
 
     ddv.setFunc({
         increment(){
-            this.count.value++;
+            this.count++;
         }
     });
 </script>

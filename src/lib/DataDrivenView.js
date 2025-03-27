@@ -22,9 +22,7 @@ class DataDrivenView {
      * @param {{[key: string]:any}} data
      */
     setData(data){
-        for(const key in data){
-            this.#variables[key] = this.#response(key,data[key]);
-        }
+        this.#variables = this.#response(data);
     }
 
     /**
@@ -39,17 +37,15 @@ class DataDrivenView {
 
     /**
      * 创建响应式对象
-     * @param {string} varName 变量名
      * @param {any} value
      * @returns {Proxy}
      */
-    #response(varName,value){
+    #response(obj){
         const that = this;
-        const obj = {value}
         return new Proxy(obj,{
             set(target,key,value){
                 target[key] = value;
-                that.#renderBinding(varName);
+                that.#renderBinding(key);
                 return true;
             }
         });
@@ -72,8 +68,8 @@ class DataDrivenView {
             node.textContent = template.replace(/__[a-zA-Z_$][a-zA-Z0-9_$]*__/g,(matched) => {
                 const key = matched.slice(2,-2);
                 const variable = this.#variables[key];
-                if(!variable) return matched;
-                return variable.value;
+                if(variable===void 0) return matched;
+                return variable;
             });
         }
     }
