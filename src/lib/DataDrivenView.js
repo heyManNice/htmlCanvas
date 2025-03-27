@@ -65,12 +65,16 @@ class DataDrivenView {
             if(renderedNodes.has(node)) continue;
             renderedNodes.add(node);
             log("[渲染节点]",node.parentElement);
-            node.textContent = template.replace(/__[a-zA-Z_$][a-zA-Z0-9_$]*__/g,(matched) => {
-                const key = matched.slice(2,-2);
-                const variable = this.#variables[key];
-                if(variable===void 0) return matched;
-                return variable;
-            });
+            const splits = this.#parseText(template);
+            let text = "";
+            for(const split of splits){
+                if(split.type === 'text'){
+                    text += split.value;
+                }else if(split.type === 'variable'){
+                    text += split.value;
+                }
+            }
+            node.textContent = text;
         }
     }
 
@@ -95,7 +99,7 @@ class DataDrivenView {
         while(walker.nextNode()){
             const node = walker.currentNode;
             if(node.nodeType === Node.TEXT_NODE){
-                this.#parseTextContent(node); 
+                this.#addBindings(node); 
             }else if(node.nodeType === Node.ELEMENT_NODE){
                 this.#parseElementAttribute(node); 
             }
@@ -109,22 +113,70 @@ class DataDrivenView {
 
         //清理script标签，保持整洁
         document.querySelectorAll("script").forEach(script => script.remove());
-        
     }
+    /**
+     * 将文本解析分段并分析是否是变量以及相关信息并返回
+     * @param {string} text
+     * @returns {{type:'variable'|'text',key:string|null,value:string}[]}
+     */
+    #parseText(text){
+         if(!text.includes('__')){
+            return {type:'text',value:text};
+         }
+         const arr = text.split("__");
+         const result = [];
+         for(const item of arr){
+            result.push(this.#parseWord(item));
+         }
+         return result;
+    }
+    /**
+     * 解析一个词的属性
+     * @param {string} word
+     * @returns {{type:'variable'|'text',key:string|null,value:string}}
+     */
+    #parseWord(word){
+        //如果这个词不只有英文下划线$或者小数点.，则不是变量
+        if(!/^[a-zA-Z_.$][a-zA-Z0-9_.$]*$/.test(word)){
+            return {type:'text',value:word};  
+        }
+        if(word.includes('.')){
+            try{
+                const variables = word.split('.');
+                let value = this.#variables;
+                for(const key of variables){
+                    value = value[key];
+                }
+                if(value===void 0){
+                    return {type:'text',value:word}; 
+                }
+                return {type:'variable',key:word,value};
+            }catch(e){
+                return {type:'text',value:word};
+            }
+        }
+        const value = this.#variables[word];
+        if(value===void 0){
+            return {type:'text',value:word};
+        }
+        return {type:'variable',key:word,value:value};
+    }
+
     /**
      * 解析文字内容,并记录到变量与节点关联bindings
      * @param {Node} node
      */
-    #parseTextContent(node){
+    #addBindings(node){
         const text = node.textContent;
         if(!text.includes('__')) return;
         //记录是否是相同的键，在同一个节点中，相同的键只需要绑定一次
-        const addedKeys = new Set();
-        node.textContent.replace(/__[a-zA-Z_$][a-zA-Z0-9_$]*__/g,(matched) => {
-            const key = matched.slice(2,-2);
-            if(addedKeys.has(key)) return;
-            addedKeys.add(key);
-
+        const splits = this.#parseText(text);
+        const addedVariables = new Set();
+        for(const item of splits){
+            if(item.type === 'text') continue;
+            const key = item.key;
+            if(addedVariables.has(key)) continue;
+            addedVariables.add(key);
             if(!this.#bindings[key]){
                 this.#bindings[key] = new Set();
             }
@@ -133,7 +185,7 @@ class DataDrivenView {
                 node
             }
             this.#bindings[key].add(add);
-        });
+        }
     }
     /**
      * 解析元素属性

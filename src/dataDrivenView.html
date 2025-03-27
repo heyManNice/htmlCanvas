@@ -4,7 +4,7 @@
     <p>__msg__</p>
     <div>
         <p class="count">__count__ __count__</p>
-        <p>test __count__</p>
+        <p>test __count__ __obj.a.b__</p>
         <button __click="increment" __mouseenter="log('count is', this.count)">+1</button>
     </div>
 </template>
@@ -14,7 +14,12 @@
 
     ddv.setData({
         msg:"这个页面不是canvas练习，而是数据驱动视图原理练习，我不知道放哪儿了就随便放在这",
-        count:0
+        count:0,
+        obj:{
+            a:{
+                b:"嵌套对象"
+            }
+        }
     });
 
     ddv.setFunc({
