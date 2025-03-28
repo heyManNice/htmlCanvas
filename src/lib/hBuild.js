@@ -1,3 +1,22 @@
+class hBaseElement {
+    children = [];
+    events = [];
+    innerText = "";
+    constructor(elementName) {
+        this.tag = elementName;
+    }
+    child(...children) {
+        for (let child of children) {
+            this.children.push(child);
+        }
+        return this;
+    }
+    on(event, callback) {
+        this.events.push({event, callback});
+        return this;
+    }
+}
+
 class hBuild {
     inited = false;
     constructor() {
@@ -5,26 +24,66 @@ class hBuild {
             if (typeof hMain !== "function") {
                 throw new Error("hMain is not a function");
             }
-            document.body.replaceChildren(hMain());
+            this.render(hMain());
             this.inited = true;
         });
+    }
+    diff = (oldRoot, newRoot) => {
+        return this.diffRecursion(oldRoot, newRoot, "0");
+    }
+    diffRecursion = (oldRoot, newRoot, path) => {
+        if(!oldRoot.children||!newRoot.children){
+            return; 
+        }
+        if(oldRoot.children.length !== newRoot.children.length){
+            return;
+        }
+        if(oldRoot.innerText!== newRoot.innerText){
+            this.diffResult.push({
+                path:path.split(" ").map(item=>Number(item)),
+                type:"innerText",
+                value:newRoot.innerText
+            });
+        }
+        for (let i = 0; i < oldRoot.children.length; i++) {
+            this.diffRecursion(oldRoot.children[i], newRoot.children[i], path+" "+i);
+        }
+    }
+    render = (root)=>{
+        if(!this.latestRoot){
+            this.latestRoot = root;
+            document.body.replaceChildren(this.renderRecursion(root));
+            return;
+        }
+        this.diffResult = [];
+        this.diff(this.latestRoot, root);
+        for (let item of this.diffResult) {
+            let element = document.body;
+            for (let i = 0; i < item.path.length; i++) {
+                element = element.children[item.path[i]];
+            }
+            element[item.type] = item.value;
+        }
+        
+    }
+    renderRecursion(hBaseElement){
+        const element = document.createElement(hBaseElement.tag);
+        if (hBaseElement.innerText) {
+            element.innerText = hBaseElement.innerText; 
+        }
+        for (let event of hBaseElement.events) {
+            element.addEventListener(event.event, event.callback); 
+        }
+        for (let child of hBaseElement.children) {
+            element.appendChild(this.renderRecursion(child));
+        }
+        return element;
     }
     createBaseElement = (elementName) => {
         if (typeof elementName !== "string") {
             throw new Error("elementName is not a string");
         }
-        const element = document.createElement(elementName);
-
-        element.child = (...children) => {
-            for (let child of children) {
-                element.appendChild(child);
-            }
-            return element;
-        }
-        element.on = (event, callback) => {
-            element.addEventListener(event, callback);
-            return element;
-        }
+        const element = new hBaseElement(elementName);
         return element;
     }
     hP = (text) => {
@@ -65,7 +124,7 @@ class hBuild {
                     return true;
                 }
                 this.isRendering = true;
-                document.body.replaceChildren(hMain());
+                this.render(hMain());
                 console.log('render');
                 this.isRendering = false;
                 return true;
