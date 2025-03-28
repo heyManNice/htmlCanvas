@@ -1,0 +1,35 @@
+<script src="./lib/hBuild.js"></script>
+<script>
+    const {hRows,hP,hButton,reactive} = new hBuild();
+
+    function hSayHello(name){
+        return hP("Hello " + name);
+    }
+
+    function hCounter(){
+        const reac = reactive();
+        reac.count = 0;
+
+        const hBtn = hButton("Click Me")
+        .on("click",()=>{
+            reac.count++;
+        });
+
+        return hRows()
+        .child(
+            hP("计数器："+reac.count),
+            hBtn
+        )
+    }
+
+    function hMain(){
+        let name = "Mike";
+
+        return hRows()
+        .child(
+            hP("hBuild是一个简单的html框架，提供直观的链式调用接口，只使用js既可以完成html的构建，并提供了响应式的数据驱动视图能力"),
+            hSayHello(name),
+            hCounter()
+        );
+    }
+</script>
