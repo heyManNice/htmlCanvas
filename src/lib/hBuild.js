@@ -1,77 +1,79 @@
-class hBuild{
+class hBuild {
     inited = false;
-    constructor(){
-        this.reactive = this.reactive.bind(this);
-        window.addEventListener("load",()=>{
-            if(typeof hMain !== "function"){
+    constructor() {
+        window.addEventListener("load", () => {
+            if (typeof hMain !== "function") {
                 throw new Error("hMain is not a function");
             }
             document.body.replaceChildren(hMain());
             this.inited = true;
         });
     }
-    hP(text){
-        if(typeof text !== "string"){
-            throw new Error("text is not a string");
+    createBaseElement = (elementName) => {
+        if (typeof elementName !== "string") {
+            throw new Error("elementName is not a string");
         }
-        let p = document.createElement("p");
-        p.innerText = text;
-        return p; 
+        const element = document.createElement(elementName);
+        
+        element.child = (...children) => {
+            for (let child of children) {
+                element.appendChild(child);
+            }
+            return element;
+        }
+        element.on = (event, callback) => {
+            element.addEventListener(event, callback);
+            return element;
+        }
+        return element;
     }
-    hButton(text){
-        if(typeof text!== "string"){
+    hP = (text) => {
+        if (typeof text !== "string") {
             throw new Error("text is not a string");
         }
-        let button = document.createElement("button");
-        button.innerText = text;
-        button.on = (event,callback)=>{
-            button.addEventListener(event,callback);
-            return button; 
+        const p = this.createBaseElement("p");
+        p.innerText = text;
+        return p;
+    }
+    hButton = (text) => {
+        if (typeof text !== "string") {
+            throw new Error("text is not a string");
         }
+        let button = this.createBaseElement("button");
+        button.innerText = text;
         return button;
     }
-    hRows(...cols){
-        let div = document.createElement("div");
-
-        div.child = (...children)=>{
-            for(let child of children){
-                div.appendChild(child);
-            }
-            return div;
-        }
-        div.on = (event,callback)=>{
-            div.addEventListener(event,callback); 
-            return div;
-        }
-        
+    hRows = (...cols) => {
+        const div = this.createBaseElement("div");
         return div;
     }
+
     binginghFunc = new Map();
     isRendering = false;
-    reactive(hFunc){
-        if(this.isRendering){
-            return this.binginghFunc.get(hFunc); 
+    reactive = (hFunc) => {
+        if (this.isRendering) {
+            return this.binginghFunc.get(hFunc);
         }
         const obj = {};
         const that = this;
-        const proxy = new Proxy(obj,{
-            set(target,prop,value){
-                if(that.isRendering){
+        const proxy = new Proxy(obj, {
+            set(target, prop, value) {
+                if (that.isRendering) {
                     return true;
                 }
                 target[prop] = value;
-                if(!that.inited){
-                    return true; 
+                if (!that.inited) {
+                    return true;
                 }
                 that.isRendering = true;
                 document.body.replaceChildren(hMain());
                 console.log('render');
-                
+
                 that.isRendering = false;
                 return true;
             }
         });
-        this.binginghFunc.set(hFunc,proxy);
+        this.binginghFunc.set(hFunc, proxy);
         return proxy;
     }
 }
