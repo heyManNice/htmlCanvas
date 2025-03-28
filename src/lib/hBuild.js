@@ -14,7 +14,7 @@ class hBuild {
             throw new Error("elementName is not a string");
         }
         const element = document.createElement(elementName);
-        
+
         element.child = (...children) => {
             for (let child of children) {
                 element.appendChild(child);
@@ -55,21 +55,19 @@ class hBuild {
             return this.binginghFunc.get(hFunc);
         }
         const obj = {};
-        const that = this;
         const proxy = new Proxy(obj, {
-            set(target, prop, value) {
-                if (that.isRendering) {
+            set: (target, prop, value) => {
+                if (this.isRendering) {
                     return true;
                 }
                 target[prop] = value;
-                if (!that.inited) {
+                if (!this.inited) {
                     return true;
                 }
-                that.isRendering = true;
+                this.isRendering = true;
                 document.body.replaceChildren(hMain());
                 console.log('render');
-
-                that.isRendering = false;
+                this.isRendering = false;
                 return true;
             }
         });
