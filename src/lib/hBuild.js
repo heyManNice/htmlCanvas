@@ -6,9 +6,7 @@ class hBaseElement {
         this.tag = elementName;
     }
     child(...children) {
-        for (let child of children) {
-            this.children.push(child);
-        }
+        this.children = children;
         return this;
     }
     on(event, callback) {
